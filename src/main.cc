@@ -1,4 +1,5 @@
 #include <iostream>
+#include "cli/cli.h"
 
 void help(char *argv0) {
   std::cerr << "Usage:" << std::endl;
@@ -19,9 +20,11 @@ int main(int argc, char **argv) {
       help(argv[0]);
       return 0;
     }
-    std::cout << "Run with loading " << arg << std::endl;
+    genea::CLI cli = genea::CLI(arg);
+    cli.run();
     return 0;
   }
-  std::cout << "Run from scratch" << std::endl;
+  genea::CLI cli = genea::CLI("");
+  cli.run();
   return 0;
 }
