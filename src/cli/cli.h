@@ -30,9 +30,20 @@ private:
   std::map<std::string, std::function<void(std::vector<std::string>)>> commands_;
   std::shared_ptr<struct Person> current_;
 
+
+  typedef std::vector<std::string> commandArgs;
   /* commands */
-  void help(std::vector<std::string> args);
-  void addPerson(std::vector<std::string> args);
+  void help(commandArgs args);
+  void create(commandArgs args);
+  void add(commandArgs args);
+  void attach(commandArgs args);
+  void remove(commandArgs args);
+  void overwrite(commandArgs args);
+  void info(commandArgs args);
+  void list(commandArgs args);
+  void select(commandArgs args);
+  void dump(commandArgs args);
+  void generateImage(commandArgs args);
   /* commands */
 };
 

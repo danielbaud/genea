@@ -25,7 +25,17 @@ std::string CLI::banner =
 CLI::CLI(const std::string& file):
 current_(nullptr),
 commands_({
-  { "help", std::bind(&CLI::help, this, std::placeholders::_1) }
+  { "help", std::bind(&CLI::help, this, std::placeholders::_1) },
+  { "create", std::bind(&CLI::create, this, std::placeholders::_1)},
+  { "add", std::bind(&CLI::add, this, std::placeholders::_1)},
+  { "attach", std::bind(&CLI::attach, this, std::placeholders::_1)},
+  { "remove", std::bind(&CLI::remove, this, std::placeholders::_1)},
+  { "overwrite", std::bind(&CLI::overwrite, this, std::placeholders::_1)},
+  { "info", std::bind(&CLI::info, this, std::placeholders::_1)},
+  { "list", std::bind(&CLI::list, this, std::placeholders::_1)},
+  { "select", std::bind(&CLI::select, this, std::placeholders::_1)},
+  { "dump", std::bind(&CLI::dump, this, std::placeholders::_1)},
+  { "generate-image", std::bind(&CLI::generateImage, this, std::placeholders::_1)}
 }) {
   if (isatty(STDIN_FILENO))
     std::cerr << banner << std::endl;
@@ -91,7 +101,7 @@ std::vector<std::string> CLI::splitLine(const std::string& line) {
 
 /* commands */
 
-void CLI::help(std::vector<std::string> args) {
+void CLI::help(commandArgs args) {
   std::cerr << std::endl << "At all times (except when no person exists), a cursor is on a person on the genealogic tree" << std::endl;
   
   // General commands
@@ -101,11 +111,14 @@ void CLI::help(std::vector<std::string> args) {
   // Creation/Deletion commands
   std::cerr << std::endl << "Creation/Deletion commands:" << std::endl;
   std::cerr << "\t create <first name> <last name> <sex> <born in> [<dead in>]" << std::endl;
-  std::cerr << "\t\t\t\t\t\t\t\t Creates a new person which is linked to nobody. It will be reachable from IDs" << std::endl;
+  std::cerr << "\t\t\t\t\t\t Creates a new person which is linked to nobody. It will be reachable from IDs" << std::endl;
   std::cerr << "\t add <relation> <first name> <last name> <sex> <born in> [<dead in>]" << std::endl;
-  std::cerr << "\t\t\t\t\t\t\t\t Creates a new person which is <relation> of the current person" << std::endl;
+  std::cerr << "\t\t\t\t\t\t Creates a new person which is <relation> of the current person" << std::endl;
   std::cerr << "\t attach <relation> <id>\t\t\t Sets the person whose ID is <id> to be <relation> of the current person" << std::endl;
-  std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person"
+  std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id1> to be <relation> of the person whose ID is <id2>" << std::endl;
+  std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person" << std::endl;
+  std::cerr << "\t overwrite <first name> <last name> <sex> <born in> [<dead in>]" << std::endl;
+  std::cerr << "\t\t\t\t\t\t Overwrite the current person with given information" << std::endl;
 
   // Info commands
   std::cerr << std::endl << "Information commands:" << std::endl;
@@ -115,9 +128,61 @@ void CLI::help(std::vector<std::string> args) {
 
   // Move commands
   std::cerr << std::endl << "Move commands:" << std::endl;
-  std::cerr << "\t goto <relation>\t\t\t Moves the cursor to the <relation> of the current person" << std::endl;
+  std::cerr << "\t select <relation>\t\t\t Moves the cursor to the <relation> of the current person" << std::endl;
   std::cerr << "\t select <id>\t\t\t\t Moves the cursor to the person whose ID is <id>" << std::endl;
+
+  // Dump commands
+  std::cerr << std::endl << "Dump commands:" << std::endl;
+  std::cerr << "\t dump <file>\t\t\t\t Dumps the current tree to <file>" << std::endl;
+  std::cerr << "\t generate-image <file>\t\t\t Generates a graph view of the genealogical tree to <file>" << std::endl;
+
+  // Relations
+  std::cerr << std::endl << "Available relations are:" << std::endl;
+  std::cerr << "\t father, mother, child[<first name>], sibling[<first name>], children (info only), siblings (info only)" << std::endl;
+  std::cerr << std::endl << "Relations can be chained separated by a point ('.')" << std::endl;
+  std::cerr << "\t Ex: select father.mother.sibling[Alice].child[Bob].father" << std::endl;
+  std::cerr << "\t Ex: info child[Charlie].mother.siblings" << std::endl << std::endl;
 }
+
+  void CLI::create(commandArgs args) {
+    return;
+  }
+
+  void CLI::add(commandArgs args) {
+    return;
+  }
+
+  void CLI::attach(commandArgs args) {
+    return;
+  }
+
+  void CLI::remove(commandArgs args) {
+    return;
+  }
+
+  void CLI::overwrite(commandArgs args) {
+    return;
+  }
+
+  void CLI::info(commandArgs args) {
+    return;
+  }
+
+  void CLI::list(commandArgs args) {
+    return;
+  }
+
+  void CLI::select(commandArgs args) {
+    return;
+  }
+
+  void CLI::dump(commandArgs args) {
+    return;
+  }
+
+  void CLI::generateImage(commandArgs args) {
+    return;
+  }
 
 /* commands */
 
