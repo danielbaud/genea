@@ -1,18 +1,28 @@
 #pragma once
 
-#include "../tree/tree.h"
-#include "../tree/person.h"
+#include "person.h"
 #include <vector>
 #include <string>
 #include <memory>
 #include <map>
 #include <functional>
+#include <cstdio>
 
 #ifndef PS1
   #define PS1 "genea>> "
 #endif
 
+
+
 namespace genea {
+
+/* utilities */
+bool parseDate(const std::string& s, struct Date* d);
+std::shared_ptr<struct Person> computeRelation(std::vector<std::string> relations, std::shared_ptr<struct Person> start);
+bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of, std::shared_ptr<struct Person> p);
+std::vector<std::string> splitLine(const std::string& line, char sep);
+/* utilities */
+
 
 class CLI {
 
@@ -23,10 +33,8 @@ public:
 private:
 
   static std::string banner;
-
-  std::vector<std::string> splitLine(const std::string& line);
   
-  Tree tree_;
+  std::vector<std::shared_ptr<struct Person>> people_;
   std::map<std::string, std::function<void(std::vector<std::string>)>> commands_;
   std::shared_ptr<struct Person> current_;
 
