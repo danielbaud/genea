@@ -227,27 +227,13 @@ void CLI::info(commandArgs args) {
       child->info();
     }
   } else if (lastRelation == "siblings") {
-    if (p->father_) {
-      std::cout << "Father side:" << std::endl;
-      if (p->father_->children_.empty()) {
-        std::cout << "No siblings" << std::endl;
-        return;
-      }
-      for (auto sibling : p->father_->children_) {
-        if (sibling != p)
-          sibling->info();
-      }
+    std::vector<std::shared_ptr<struct Person>> siblings = getSiblings(p);
+    if (siblings.empty()) {
+      std::cout << "No siblings" << std::endl;
+      return;
     }
-    if (p->mother_) {
-      std::cout << "Mother side:" << std::endl;
-      if (p->mother_->children_.empty()) {
-        std::cout << "No siblings" << std::endl;
-        return;
-      }
-      for (auto sibling : p->mother_->children_) {
-        if (sibling != p)
-          sibling->info();
-      }
+    for (auto sibling : siblings) {
+      sibling->info();
     }
   } else {
     std::shared_ptr<struct Person> t = computeRelation({lastRelation}, p);
@@ -266,6 +252,7 @@ void CLI::list(commandArgs args) {
   for (auto person : people_) {
     std::cout << i << ") ";
     person->info();
+    i++;
   }
 }
 

@@ -148,12 +148,30 @@ bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of,
     }
     if (of->mother_) {
       of->mother_->children_.push_back(p);
-      p->mother_ = of->father_;
+      p->mother_ = of->mother_;
     }
     return true;
   }
   std::cerr << "Error: when adding a relation, the last one must be either mother, father, children or siblings" << std::endl;
   return false;
+}
+
+std::vector<std::shared_ptr<struct Person>> getSiblings(std::shared_ptr<struct Person> p) {
+  std::vector<std::shared_ptr<struct Person>> res;
+  if (p->father_) {
+    for (auto child : p->father_->children_) {
+      if (child != p)
+        res.push_back(child);
+    }
+  }
+  if (p->mother_) {
+    for (auto child : p->mother_->children_) {
+      auto c = std::find(res.begin(), res.end(), child);
+      if (c == res.end() && child != p)
+        res.push_back(child);
+    }
+  }
+  return res;
 }
 
 std::vector<std::string> splitLine(const std::string& line, char sep) {

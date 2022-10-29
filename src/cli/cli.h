@@ -20,6 +20,7 @@ namespace genea {
 bool parseDate(const std::string& s, struct Date* d);
 std::shared_ptr<struct Person> computeRelation(std::vector<std::string> relations, std::shared_ptr<struct Person> start);
 bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of, std::shared_ptr<struct Person> p);
+std::vector<std::shared_ptr<struct Person>> getSiblings(std::shared_ptr<struct Person> p);
 std::vector<std::string> splitLine(const std::string& line, char sep);
 /* utilities */
 
