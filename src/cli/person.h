@@ -47,11 +47,11 @@ public:
 
   void info() {
     std::cout << (sex_ == Sex::MALE ? "Mr " : "Ms ");
-    std::cout << firstName_ << ' ' << lastName_ << ", born on " << born_.toString();
+    std::cout << firstName_ << ' ' << lastName_ << std::endl;
+    std::cout << "  Born on " << born_.toString() << std::endl;
     if (dead_)
-      std::cout << "and dead on " << dead_->toString();
-    std::cout << std::endl << "  ";
-    std::cout << (sex_ == Sex::MALE ? "Son" : "Daughter") << " of " << (father_ ? father_->firstName_ : "unknown");
+      std::cout << "  Died on " << dead_->toString() << std::endl;
+    std::cout << "  " << (sex_ == Sex::MALE ? "Son" : "Daughter") << " of " << (father_ ? father_->firstName_ : "unknown");
     std::cout << " and " << (mother_ ? mother_->firstName_ : "unknown") << ", has " << children_.size() << " children" << std::endl;
   }
 

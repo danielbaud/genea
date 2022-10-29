@@ -1,89 +1,112 @@
 #include "person.h"
+#include <map>
+#include <functional>
 
 namespace genea {
-/* utilities */
-bool parseDate(const std::string& s, struct Date* d) {
-  if (s == "?")
-    return true;
-  int day, month, year;
-  if (sscanf(s.c_str(), "%d/%d/%d", &day, &month, &year) == 3) {
-    d->day_ = day;
-    d->month_ = month;
-    d->year_ = year;
-    return true;
-  }
-  if (sscanf(s.c_str(), "%d/%d", &month, &year) == 2) {
-    d->month_ = month;
-    d->year_ = year;
-    return true;
-  }
-  if (sscanf(s.c_str(), "%d", &year) == 1) {
-    d->year_ = year;
-    return true;
-  }
-  return false;
+
+namespace relation {
+
+std::vector<std::shared_ptr<struct Person>> children(std::shared_ptr<struct Person> p) {
+  return p->children_;
 }
 
-std::shared_ptr<struct Person> computeRelation(std::vector<std::string> relations, std::shared_ptr<struct Person> start) {
+std::vector<std::shared_ptr<struct Person>> siblings(std::shared_ptr<struct Person> p) {
+  std::vector<std::shared_ptr<struct Person>> res;
+  if (p->father_) {
+    for (auto& child : p->father_->children_) {
+      if (child != p)
+        res.push_back(child);
+    }
+  }
+  if (p->mother_) {
+    for (auto& child : p->mother_->children_) {
+      auto c = std::find(res.begin(), res.end(), child);
+      if (c == res.end() && child != p)
+        res.push_back(child);
+    }
+  }
+  return res;
+}
+
+std::shared_ptr<struct Person> father(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  return p->father_;
+}
+
+std::shared_ptr<struct Person> mother(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  return p->mother_;
+}
+
+std::shared_ptr<struct Person> child(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier == "") {
+    std::cerr << "child: needs a specifier" << std::endl;
+    return nullptr;
+  }
+  for (auto& c : p->children_) {
+    if (c->firstName_ == specifier)
+      return c;
+  }
+  return nullptr;
+}
+
+std::shared_ptr<struct Person> sibling(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier == "") {
+    std::cerr << "sibling: needs a specifier" << std::endl;
+    return nullptr;
+  }
+  std::vector<std::shared_ptr<struct Person>> s = siblings(p);
+  for (auto& sib : s) {
+    if (sib->firstName_ == specifier)
+      return sib;
+  }
+  return nullptr;
+}
+
+std::map<std::string, std::function<std::shared_ptr<struct Person>(std::shared_ptr<struct Person>, std::string)>> relations = {
+  { "father", &father },
+  { "mother", &mother },
+  { "child", &child },
+  { "sibling", &sibling }
+};
+
+std::map<std::string, std::function<std::vector<std::shared_ptr<struct Person>>(std::shared_ptr<struct Person>)>> relationGroups = {
+  { "child", &children },
+  { "sibling", &siblings }
+};
+
+
+} // namespace relation
+
+/* utilities */
+
+std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::string> relations, std::shared_ptr<struct Person> start) {
   std::shared_ptr<struct Person> p = start;
   unsigned cpt = 0;
   char name[100];
-  for (auto relation : relations) {
+  for (auto& r : relations) {
     cpt++;
-    if (relation == "father") {
-      p = p->father_;
-    } else if (relation == "mother") {
-      p = p->mother_;
-    } else if (sscanf(relation.c_str(), "child:%s", name) == 1) {
-      std::string n(name);
-      unsigned i = 0;
-      bool found = false;
-      while (i < p->children_.size() && !found) {
-        if (p->children_[i]->firstName_ == n) {
-          found = true;
-          p = p->children_[i];
-        }
-        i++;
-      }
-      if (!found)
-        p = nullptr;
-    } else if (sscanf(relation.c_str(), "sibling:%s", name) == 1) {
-      std::string n(name);
-      unsigned i = 0;
-      bool found = false;
-      if (p->father_) {
-        while (i < p->father_->children_.size() && !found) {
-          if (p->father_->children_[i]->firstName_ == n) {
-            found = true;
-            p = p->father_->children_[i];
-          }
-          i++;
-        }
-      }
-      i = 0;
-      if (p->mother_) {
-        while (i < p->mother_->children_.size() && !found) {
-          if (p->mother_->children_[i]->firstName_ == n) {
-            found = true;
-            p = p->mother_->children_[i];
-          }
-          i++;
-        }
-      }
-      if (!found)
-        p = nullptr;
-    } else if (relation == "children" || relation == "siblings") {
-      std::cerr << "Relation " << relation << " can't be used unless it is the last one" << std::endl;
-      return nullptr;
-    } else {
-      std::cerr << "Relation " << relation << " is unknown" << std::endl;
-      return nullptr;
+    bool group = relation::relationGroups.contains(r);
+    bool last = (&r == &relations.back());
+    if (last && group) {
+      return relation::relationGroups[r](p);
     }
-    if (!p) {
-      std::cerr << "Relation " << cpt << ": " << relation << " does not exist" << std::endl;
+    if (!last && group) {
+      std::cerr << "Relation '" << r << "' (" << cpt << "): grouping relations must be placed last" << std::endl;
+    }
+    auto colon = r.find(':');
+    std::string rel = (colon == std::string::npos ? r : r.substr(0, colon));
+    std::string spec = (colon == std::string::npos ? "" : r.substr(colon + 1));
+    if (relation::relations.contains(rel)) {
+      p = relation::relations[rel](p, spec);
+      if (!p) {
+        std::cerr << "Relation '" << r << "' (" << cpt << "): does not exist (yet?)" << std::endl;
+        return {};
+      }
+    } else {
+      std::cerr << "Relation '" << r << "' (" << cpt << "): unknown relation" << std::endl;
+      return {};
     }
   }
-  return p;
+  return { p };
 }
 
 bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of, std::shared_ptr<struct Person> p) {
@@ -156,25 +179,53 @@ bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of,
   return false;
 }
 
-std::vector<std::shared_ptr<struct Person>> getSiblings(std::shared_ptr<struct Person> p) {
-  std::vector<std::shared_ptr<struct Person>> res;
-  if (p->father_) {
-    for (auto child : p->father_->children_) {
-      if (child != p)
-        res.push_back(child);
-    }
+bool parseDate(const std::string& s, struct Date* d) {
+  if (s == "?")
+    return true;
+  int day, month, year;
+  if (sscanf(s.c_str(), "%d/%d/%d", &day, &month, &year) == 3) {
+    d->day_ = day;
+    d->month_ = month;
+    d->year_ = year;
+    return true;
   }
-  if (p->mother_) {
-    for (auto child : p->mother_->children_) {
-      auto c = std::find(res.begin(), res.end(), child);
-      if (c == res.end() && child != p)
-        res.push_back(child);
-    }
+  if (sscanf(s.c_str(), "%d/%d", &month, &year) == 2) {
+    d->month_ = month;
+    d->year_ = year;
+    return true;
   }
-  return res;
+  if (sscanf(s.c_str(), "%d", &year) == 1) {
+    d->year_ = year;
+    return true;
+  }
+  return false;
 }
 
-std::vector<std::string> splitLine(const std::string& line, char sep) {
+std::shared_ptr<struct Person> parsePerson(std::vector<std::string> args) {
+  std::string fname = args[0];
+  std::string lname = args[1];
+  if (args[2] != "M" && args[2] != "F") {
+    std::cerr << "Error: sex must be either M of F" << std::endl;
+    return nullptr;
+  }
+  Sex sex = args[2] == "M" ? Sex::MALE : Sex::FEMALE;
+  struct Date birth = Date();
+  if (!parseDate(args[3], &birth)) {
+    std::cerr << "Error: birth date must be either dd/mm/yyyy, mm/yyyy, yyyy or ? if unknown" << std::endl;
+    return nullptr;
+  }
+  if (args.size() == 5) {
+    struct Date death = Date();
+    if (!parseDate(args[4], &death)) {
+      std::cerr << "Error: death date must be either dd/mm/yyyy, mm/yyyy, yyyy or ? if unknown" << std::endl;
+      return nullptr;
+    }
+    return std::make_shared<struct Person>(fname, lname, sex, birth, death);
+  }
+  return std::make_shared<struct Person>(fname, lname, sex, birth);
+}
+
+std::vector<std::string> parseLine(const std::string& line, char sep) {
   std::vector<std::string> command = std::vector<std::string>();
   unsigned start = 0;
   unsigned end = 0;

@@ -66,7 +66,7 @@ void CLI::run() {
   bool exit = false;
 
   while (!std::cin.eof() && !exit) {
-    std::vector<std::string> command = splitLine(line, ' ');
+    std::vector<std::string> command = parseLine(line, ' ');
     if (command.size()) {
       std::string arg0 = command[0];
       if (!commands_.contains(arg0)) {
@@ -99,6 +99,7 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t attach <relation> <id>\t\t\t Sets the person whose ID is <id> to be <relation> of the current person" << std::endl;
   std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id1> to be <relation> of the person whose ID is <id2>" << std::endl;
   std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person" << std::endl;
+  std::cerr << "\t remove <id> \t\t\t Removes the person whose ID is <id>" << std::endl;
   std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
   std::cerr << "\t\t\t\t\t\t Overwrite the current person with given information" << std::endl;
 
@@ -128,62 +129,54 @@ void CLI::help(commandArgs args) {
 
 void CLI::create(commandArgs args) {
   if (args.size() != 4 && args.size() != 5) {
-    std::cerr << "Usage: create <first name> <last name> <sex> <birth> [<death>]" << std::endl;
+    std::cerr << "Usage:" << std::endl << "\t create <first name> <last name> <sex> <birth> [<death>]" << std::endl;
     return;
   }
-  std::string fname = args[0];
-  std::string lname = args[1];
-  if (args[2] != "M" && args[2] != "F") {
-    std::cerr << "Error: sex must be either M of F" << std::endl;
+  std::shared_ptr<struct Person> created = parsePerson(args);
+  if (!created) {
+    std::cerr << "create: Could not create person" << std::endl;
     return;
   }
-  Sex sex = args[2] == "M" ? Sex::MALE : Sex::FEMALE;
-  struct Date birth = Date();
-  if (!parseDate(args[3], &birth)) {
-    std::cerr << "Error: birth date must be either dd/mm/yyyy, mm/yyyy, yyyy or ? if unknown" << std::endl;
-    return;
-  }
-  if (args.size() == 5) {
-    struct Date death = Date();
-    if (!parseDate(args[4], &death)) {
-      std::cerr << "Error: death date must be either dd/mm/yyyy, mm/yyyy, yyyy or ? if unknown" << std::endl;
-      return;
-    }
-
-    people_.push_back(std::make_shared<struct Person>(fname, lname, sex, birth, death));
-  } else {
-    people_.push_back(std::make_shared<struct Person>(fname, lname, sex, birth));
-  }
+  people_.push_back(created);
   std::cout << "Created person ID " << people_.size() - 1 << std::endl;
-  people_.back()->info();
   if (!current_) {
-    current_ = people_.back();
-    std::cout << "Cursor set to this person" << std::endl;
+    current_ = created;
+    std::cout << "(Cursor set to this person)" << std::endl;
   }
+  created->info();
 }
 
 void CLI::add(commandArgs args) {
   if (!current_) {
-    std::cerr << "Error: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    std::cerr << "add: You must create at least one person before. Your cursor is nobody!" << std::endl;
     return;
   }
   if (args.size() != 5 && args.size() != 6) {
-    std::cerr << "Usage: add <relation> <first name> <last name> <sex> <birth> [<death>]" << std::endl;
+    std::cerr << "Usage:" << std::endl << "\t add <relation> <first name> <last name> <sex> <birth> [<death>]" << std::endl;
     return;
   }
-  std::vector<std::string> relationChain = splitLine(args[0], '.');
-  std::shared_ptr<struct Person> p = computeRelation(std::vector<std::string>(relationChain.begin(), relationChain.end() - 1), current_);
-  if (!p) {
-    std::cerr << "Error: could not add that relation" << std::endl;
+  std::vector<std::string> relationChain = parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> p = computeRelation(std::vector<std::string>(relationChain.begin(), relationChain.end() - 1), current_);
+  if (!p.size()) {
+    std::cerr << "add: Could not get to that relation" << std::endl;
     return;
   }
-  std::string lastRelation = relationChain.back();
-  create(std::vector<std::string>(args.begin() + 1, args.end()));
-  if (!setRelation(lastRelation, p, people_.back())) {
-    people_.pop_back();
-    std::cerr << "Removed person ID " << people_.size() << std::endl;
+  if (p.size() > 1) {
+    std::cerr << "add: Grouping relation must be last" << std::endl;
     return;
   }
+  std::shared_ptr<struct Person> created = parsePerson(std::vector<std::string>(args.begin() + 1, args.end()));
+  if (!created) {
+    std::cerr << "add: Could not create person" << std::endl;
+    return;
+  }
+  if (!setRelation(relationChain.back(), p[0], created)) {
+    std::cerr << "add: Could not create relation" << std::endl;
+    return;
+  }
+  people_.push_back(created);
+  std::cout << "Created person ID " << people_.size() - 1 << std::endl;
+  created->info();
 }
 
 void CLI::attach(commandArgs args) {
@@ -191,11 +184,7 @@ void CLI::attach(commandArgs args) {
 }
 
 void CLI::remove(commandArgs args) {
-  if (args.size() != 1) {
-    std::cerr << "Usage: remove <relation>" << std::endl;
-    return;
-  }
-  
+  return;
 }
 
 void CLI::overwrite(commandArgs args) {
@@ -204,42 +193,21 @@ void CLI::overwrite(commandArgs args) {
 
 void CLI::info(commandArgs args) {
   if (args.size() > 1) {
-    std::cerr << "Usage: info [relation]" << std::endl;
+    std::cerr << "Usage:" << std::endl << "\t info [<relation>]" << std::endl;
     return;
   }
   if (args.empty()) {
     current_->info();
     return;
   }
-  std::vector<std::string> relationChain = splitLine(args[0], '.');
-  std::shared_ptr<struct Person> p = computeRelation(std::vector<std::string>(relationChain.begin(), relationChain.end() - 1), current_);
-  if (!p) {
-    std::cerr << "Error: could not compute that relation" << std::endl;
+  std::vector<std::string> relationChain = parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> people = computeRelation(relationChain, current_);
+  if (!people.size()) {
+    std::cout << "Nobody" << std::endl;
     return;
   }
-  std::string lastRelation = relationChain.back();
-  if (lastRelation == "children") {
-    if (p->children_.empty()) {
-      std::cout << "No children" << std::endl;
-      return;
-    }
-    for (auto child : p->children_) {
-      child->info();
-    }
-  } else if (lastRelation == "siblings") {
-    std::vector<std::shared_ptr<struct Person>> siblings = getSiblings(p);
-    if (siblings.empty()) {
-      std::cout << "No siblings" << std::endl;
-      return;
-    }
-    for (auto sibling : siblings) {
-      sibling->info();
-    }
-  } else {
-    std::shared_ptr<struct Person> t = computeRelation({lastRelation}, p);
-    if (t) {
-      t->info();
-    }
+  for (auto person : people) {
+    person->info();
   }
 }
 
@@ -257,7 +225,32 @@ void CLI::list(commandArgs args) {
 }
 
 void CLI::select(commandArgs args) {
-  std::cerr << "Still not supported" << std::endl;
+  if (args.size() != 1) {
+    std::cerr << "Usage:" << std::endl << "\t select <relation>" << std::endl << "\t select <id>" << std::endl;
+    return;
+  }
+  int id;
+  if (sscanf(args[0].c_str(), "%d", &id) == 1) {
+    if (id < 0 || id >= people_.size()) {
+      std::cerr << "select: invalid/non-existent ID" << std::endl;
+      return;
+    }
+    current_ = people_[id];
+    current_->info();
+    return;
+  }
+  std::vector<std::string> relationChain = parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> p = computeRelation(relationChain, current_);
+  if (!p.size()) {
+    std::cerr << "select: Could not get to that relation" << std::endl;
+    return;
+  }
+  if (p.size() > 1) {
+    std::cerr << "select: Can't select a grouping relation" << std::endl;
+    return;
+  }
+  current_ = p[0];
+  current_->info();
 }
 
 void CLI::dump(commandArgs args) {
