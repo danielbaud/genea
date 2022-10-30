@@ -105,7 +105,7 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t add <relation> <first name> <last name> <sex> <birth> [<death>]" << std::endl;
   std::cerr << "\t\t\t\t\t\t Creates a new person which is <relation> of the current person" << std::endl;
   std::cerr << "\t attach <relation> <id>\t\t\t Sets the person whose ID is <id> to be <relation> of the current person" << std::endl;
-  std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id1> to be <relation> of the person whose ID is <id2>" << std::endl;
+  std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id2> to be <relation> of the person whose ID is <id1>" << std::endl;
   std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person" << std::endl;
   std::cerr << "\t remove <id> \t\t\t\t Removes the person whose ID is <id>. Warning, the person is entirely removed" << std::endl;
   std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
