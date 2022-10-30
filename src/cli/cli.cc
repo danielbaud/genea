@@ -104,18 +104,18 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t\t\t\t\t\t Creates a new person which is linked to nobody. It will be reachable from IDs" << std::endl;
   std::cerr << "\t add <relation> <first name> <last name> <sex> <birth> [<death>]" << std::endl;
   std::cerr << "\t\t\t\t\t\t Creates a new person which is <relation> of the current person" << std::endl;
+  std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
+  std::cerr << "\t\t\t\t\t\t Overwrite the current person with given information" << std::endl;
   std::cerr << "\t attach <relation> <id>\t\t\t Sets the person whose ID is <id> to be <relation> of the current person" << std::endl;
   std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id2> to be <relation> of the person whose ID is <id1>" << std::endl;
   std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person" << std::endl;
   std::cerr << "\t remove <id> \t\t\t\t Removes the person whose ID is <id>. Warning, the person is entirely removed" << std::endl;
-  std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
-  std::cerr << "\t\t\t\t\t\t Overwrite the current person with given information" << std::endl;
 
   // Info commands
   std::cerr << std::endl << "Information commands:" << std::endl;
   std::cerr << "\t info\t\t\t\t\t Displays information about the current person" << std::endl;
   std::cerr << "\t info <relation>\t\t\t Displays information about the <relation> of the current person" << std::endl;
-  std::cerr << "\t info <id>\t\t\t Displays information about the person whose ID is <id>" << std::endl;
+  std::cerr << "\t info <id>\t\t\t\t Displays information about the person whose ID is <id>" << std::endl;
   std::cerr << "\t list\t\t\t\t\t Displays a list of all people of the tree with their given ID" << std::endl;
   std::cerr << "\t search <name>\t\t\t\t Displays all the people whose first name or last name matches <name>" << std::endl;
 
@@ -133,8 +133,8 @@ void CLI::help(commandArgs args) {
   std::cerr << std::endl << "Available relations are:" << std::endl;
   std::cerr << "\t father, mother, child:<first name>, sibling:<first name>, child (grouping), sibling (grouping)" << std::endl;
   std::cerr << std::endl << "Relations can be chained separated by a point ('.')" << std::endl;
-  std::cerr << "\t Ex: select father.mother.sibling[Alice].child[Bob].father" << std::endl;
-  std::cerr << "\t Ex: info child[Charlie].mother.sibling" << std::endl << std::endl;
+  std::cerr << "\t Ex: select father.mother.sibling:Alice.child:Bob.father" << std::endl;
+  std::cerr << "\t Ex: info child:Charlie.mother.sibling" << std::endl << std::endl;
 }
 
 void CLI::create(commandArgs args) {
