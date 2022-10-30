@@ -22,7 +22,7 @@ struct Date {
 
   std::string toString() {
     if (year_ == -1)
-      return "???";
+      return "?";
     std::string res = "";
     if (day_ != -1)
       res = std::to_string(day_) + "/";
@@ -40,10 +40,10 @@ struct Person {
 
 public:
   Person(const std::string& firstName, const std::string& lastName, Sex sex, struct Date born):
-  firstName_(firstName), lastName_(lastName), sex_(sex), born_(born), dead_({}), mother_(nullptr), father_(nullptr), children_({}) {};
+  firstName_(firstName), lastName_(lastName), sex_(sex), born_(born), dead_({}), mother_(nullptr), father_(nullptr), children_({}), id(-1) {};
 
   Person(const std::string& firstName, const std::string& lastName, Sex sex, struct Date born, struct Date dead):
-  firstName_(firstName), lastName_(lastName), sex_(sex), born_(born), dead_(dead), mother_(nullptr), father_(nullptr), children_({}) {};
+  firstName_(firstName), lastName_(lastName), sex_(sex), born_(born), dead_(dead), mother_(nullptr), father_(nullptr), children_({}), id(-1) {};
 
   void info() {
     std::cout << (sex_ == Sex::MALE ? "Mr " : "Ms ");
@@ -53,6 +53,10 @@ public:
       std::cout << "  Died on " << dead_->toString() << std::endl;
     std::cout << "  " << (sex_ == Sex::MALE ? "Son" : "Daughter") << " of " << (father_ ? father_->firstName_ : "unknown");
     std::cout << " and " << (mother_ ? mother_->firstName_ : "unknown") << ", has " << children_.size() << " children" << std::endl;
+  }
+
+  std::string dump() {
+    return firstName_ + ' ' + lastName_ + ' ' + (sex_ == Sex::MALE ? 'M' : 'F') + ' ' + born_.toString() + (dead_ ? dead_->toString() : "");
   }
 
   std::string firstName_;
@@ -65,6 +69,8 @@ public:
   std::shared_ptr<struct Person> father_;
 
   std::vector<std::shared_ptr<struct Person>> children_;
+
+  int id; // for dumping functions
 };
 
 

@@ -7,6 +7,7 @@
 #include <map>
 #include <functional>
 #include <cstdio>
+#include <fstream>
 
 #ifndef PS1
   #define PS1 "genea>> "
@@ -25,6 +26,7 @@ std::shared_ptr<struct Person> parsePerson(std::vector<std::string> args);
 bool parseDate(const std::string& s, struct Date* d);
 std::vector<std::string> parseLine(const std::string& line, char sep);
 int parseId(const std::string& arg);
+std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in);
 
 } // namespace utils
 

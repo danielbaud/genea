@@ -52,8 +52,13 @@ commands_({
     std::cout << "Created empty tree" << std::endl;
     return;
   }
-  // utils::parse file
-  f.close();
+  std::vector<std::shared_ptr<struct Person>> people = utils::parseFile(f);
+  if (!people.size()) {
+    std::cerr << "Warning: file " << file << " is corrupted/incorrect" << std::endl;
+    std::cout << "Created empty tree" << std::endl;
+    return;
+  }
+  people_ = people;
   std::cout << "Tree loaded from " << file << std::endl;
 }
 
@@ -383,7 +388,27 @@ void CLI::select(commandArgs args) {
 }
 
 void CLI::dump(commandArgs args) {
-  std::cerr << "Still not supported" << std::endl;
+  if (args.size() != 1) {
+    std::cerr << "Usage:" << std::endl << "\t dump <file>" << std::endl;
+    return;
+  }
+  std::ofstream out(args[0]);
+  if (!out.good()) {
+    std::cerr << "dump: Could not write to file " << args[0] << std::endl;
+    return;
+  }
+  out << people_.size() << std::endl;
+  int i = 0;
+  for (auto& person : people_) {
+    person->id = i;
+    i++;
+    out << person->dump() << std::endl;
+  }
+  for (auto& person : people_) {
+    out << (person->father_ ? person->father_->id : -1) << ' ' << (person->mother_ ? person->mother_->id : -1) << std::endl;
+  }
+  out.close();
+  std::cout << "Tree dumped to " << args[0] << std::endl;
 }
 
 void CLI::generateImage(commandArgs args) {

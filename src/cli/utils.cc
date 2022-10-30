@@ -1,5 +1,6 @@
 #include "person.h"
 #include <map>
+#include <fstream>
 #include <functional>
 #include <cassert>
 
@@ -276,6 +277,10 @@ bool parseDate(const std::string& s, struct Date* d) {
 
 
 std::shared_ptr<struct Person> parsePerson(std::vector<std::string> args) {
+  if (args.size() != 4 && args.size() != 5) {
+    std::cerr << "Person: invalid number of arguments" << std::endl;
+    return nullptr;
+  }
   std::string fname = args[0];
   std::string lname = args[1];
   if (args[2] != "M" && args[2] != "F") {
@@ -324,6 +329,43 @@ int parseId(const std::string& arg) {
      return -1;
   }
   return id;
+}
+
+std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in) {
+  std::vector<std::shared_ptr<struct Person>> res;
+  std::string line;
+  int n;
+  in >> n;
+  std::getline(in, line);
+  if (!in.good()) {
+    in.close();
+    std::cerr << "File is invalid or corrupted" << std::endl;
+    return {};
+  }
+  for (int i = 0; i < n; ++i) {
+    std::getline(in, line);
+    std::vector<std::string> args = parseLine(line, ' ');
+    std::shared_ptr<struct Person> p = parsePerson(args);
+    if (!p) {
+      in.close();
+      return {};
+    }
+    res.push_back(p);
+  }
+  for (int i = 0; i < n; ++i) {
+    std::getline(in, line);
+    int id1, id2;
+    if (sscanf(line.c_str(), "%d %d\n", &id1, &id2) != 2) {
+      in.close();
+      return {};
+    }
+    if (id1 >= 0 && id1 < n)
+      setRelation("father", res[i], res[id1]);
+    if (id2 >= 0 && id2 < n)
+      setRelation("mother", res[i], res[id2]);
+  }
+  in.close();
+  return res;
 }
 
 } // namespace utils
