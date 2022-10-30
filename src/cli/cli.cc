@@ -229,6 +229,10 @@ void CLI::list(commandArgs args) {
 }
 
 void CLI::select(commandArgs args) {
+  if (!current_) {
+    std::cerr << "select: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    return;
+  }
   if (args.size() != 1) {
     std::cerr << "Usage:" << std::endl << "\t select <relation>" << std::endl << "\t select <id>" << std::endl;
     return;
