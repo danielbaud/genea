@@ -16,13 +16,16 @@
 
 namespace genea {
 
-/* utilities */
+namespace utils {
+
 std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::string> relations, std::shared_ptr<struct Person> start);
 bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of, std::shared_ptr<struct Person> p);
 std::shared_ptr<struct Person> parsePerson(std::vector<std::string> args);
 bool parseDate(const std::string& s, struct Date* d);
 std::vector<std::string> parseLine(const std::string& line, char sep);
-/* utilities */
+int parseId(const std::string& arg);
+
+} // namespace utils
 
 
 class CLI {
@@ -50,6 +53,7 @@ private:
   void overwrite(commandArgs args);
   void info(commandArgs args);
   void list(commandArgs args);
+  void search(commandArgs args);
   void select(commandArgs args);
   void dump(commandArgs args);
   void generateImage(commandArgs args);

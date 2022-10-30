@@ -1,6 +1,7 @@
 #include "person.h"
 #include <map>
 #include <functional>
+#include <cassert>
 
 namespace genea {
 
@@ -29,10 +30,18 @@ std::vector<std::shared_ptr<struct Person>> siblings(std::shared_ptr<struct Pers
 }
 
 std::shared_ptr<struct Person> father(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier != "") {
+    std::cerr << "father: can't use specifier" << std::endl;
+    return nullptr;
+  }
   return p->father_;
 }
 
 std::shared_ptr<struct Person> mother(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier != "") {
+    std::cerr << "mother: can't use specifier" << std::endl;
+    return nullptr;
+  }
   return p->mother_;
 }
 
@@ -61,22 +70,73 @@ std::shared_ptr<struct Person> sibling(std::shared_ptr<struct Person> p, const s
   return nullptr;
 }
 
-std::map<std::string, std::function<std::shared_ptr<struct Person>(std::shared_ptr<struct Person>, std::string)>> relations = {
+bool setFather(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> other) {
+  if (p->father_) {
+    std::cout << "Warning: father already exists and is being replaced" << std::endl;
+    auto child = std::find(p->father_->children_.begin(), p->father_->children_.end(), p);
+    assert(child != p->father_->children_.end());
+    p->father_->children_.erase(child);
+  }
+  p->father_ = other;
+  other->children_.push_back(p);
+  return true;
+}
+
+bool setMother(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> other) {
+  if (p->mother_) {
+    std::cout << "Warning: mother already exists and is being replaced" << std::endl;
+    auto child = std::find(p->mother_->children_.begin(), p->mother_->children_.end(), p);
+    assert(child != p->mother_->children_.end());
+    p->mother_->children_.erase(child);
+  }
+  p->mother_ = other;
+  other->children_.push_back(p);
+  return true;
+}
+
+bool setChild(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> other) {
+  if (other->sex_ == Sex::MALE)
+    return setFather(other, p);
+  return setMother(other, p);
+}
+
+bool setSibling(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> other) {
+  if (!p->father_ && !p->mother_) {
+    std::cerr << "Error: No parent known, impossible to create sibling" << std::endl;
+    return false;
+  }
+  if (p->father_) {
+    setFather(other, p->father_);
+  }
+  if (p->mother_) {
+    setMother(other, p->mother_);
+  }
+  return true;
+}
+
+std::map<std::string, std::function<std::shared_ptr<struct Person>(std::shared_ptr<struct Person>, std::string)>> getRelation = {
   { "father", &father },
   { "mother", &mother },
   { "child", &child },
   { "sibling", &sibling }
 };
 
-std::map<std::string, std::function<std::vector<std::shared_ptr<struct Person>>(std::shared_ptr<struct Person>)>> relationGroups = {
+std::map<std::string, std::function<std::vector<std::shared_ptr<struct Person>>(std::shared_ptr<struct Person>)>> getRelationGroup = {
   { "child", &children },
   { "sibling", &siblings }
+};
+
+std::map<std::string, std::function<bool(std::shared_ptr<struct Person>, std::shared_ptr<struct Person>)>> setRelation = {
+  { "father", &setFather },
+  { "mother", &setMother },
+  { "child", &setChild },
+  { "sibling", &setSibling }
 };
 
 
 } // namespace relation
 
-/* utilities */
+namespace utils {
 
 std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::string> relations, std::shared_ptr<struct Person> start) {
   std::shared_ptr<struct Person> p = start;
@@ -84,10 +144,10 @@ std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::str
   char name[100];
   for (auto& r : relations) {
     cpt++;
-    bool group = relation::relationGroups.contains(r);
+    bool group = relation::getRelationGroup.contains(r);
     bool last = (&r == &relations.back());
     if (last && group) {
-      return relation::relationGroups[r](p);
+      return relation::getRelationGroup[r](p);
     }
     if (!last && group) {
       std::cerr << "Relation '" << r << "' (" << cpt << "): grouping relations must be placed last" << std::endl;
@@ -95,10 +155,10 @@ std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::str
     auto colon = r.find(':');
     std::string rel = (colon == std::string::npos ? r : r.substr(0, colon));
     std::string spec = (colon == std::string::npos ? "" : r.substr(colon + 1));
-    if (relation::relations.contains(rel)) {
-      p = relation::relations[rel](p, spec);
+    if (relation::getRelation.contains(rel)) {
+      p = relation::getRelation[rel](p, spec);
       if (!p) {
-        std::cerr << "Relation '" << r << "' (" << cpt << "): does not exist (yet?)" << std::endl;
+        std::cerr << "Relation '" << r << "' (" << cpt << "): does not exist" << std::endl;
         return {};
       }
     } else {
@@ -109,75 +169,15 @@ std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::str
   return { p };
 }
 
-bool setRelation(const std::string& relation, std::shared_ptr<struct Person> of, std::shared_ptr<struct Person> p) {
-  if (relation == "father") {
-    if (of->father_) {
-      std::cerr << "Error: Father already exists" << std::endl;
-      return false;
-    }
-    of->father_ = p;
-    p->children_.push_back(of);
-    return true;
+
+bool setRelation(const std::string& relation, std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> other) {
+  if (!relation::setRelation.contains(relation)) {
+    std::cerr << "Relation '" << relation << "' (last): Unknown relation" << std::endl;
+    return false;
   }
-  if (relation == "mother") {
-    if (of->mother_) {
-      std::cerr << "Error: Mother already exists" << std::endl;
-      return false;
-    }
-    of->mother_ = p;
-    p->children_.push_back(of);
-    return true;
-  }
-  if (relation == "children") {
-    if (of->sex_ == Sex::MALE) {
-      if (p->father_) {
-        std::cerr << "Error: Child already has a father" << std::endl;
-        return false;
-      }
-      of->children_.push_back(p);
-      p->father_ = of;
-      return true;
-    }
-    if (of->sex_ == Sex::FEMALE) {
-      if (p->mother_) {
-        std::cerr << "Error: Child already has a mother" << std::endl;
-        return false;
-      }
-      of->children_.push_back(p);
-      p->mother_ = of;
-      return true;
-    }
-  }
-  if (relation == "siblings") {
-    if (!of->father_ && !of->mother_) {
-      std::cerr << "Error: can't add a sibling if no parent is known" << std::endl;
-      return false;
-    }
-    if (of->father_) {
-      if (p->father_) {
-        std::cerr << "Error: can't add sibling that already has a father" << std::endl;
-        return false;
-      }
-    }
-    if (of->mother_) {
-      if (p->mother_) {
-        std::cerr << "Error: can't add sibling that already has a father" << std::endl;
-        return false;
-      }
-    }
-    if (of->father_) {
-      of->father_->children_.push_back(p);
-      p->father_ = of->father_;
-    }
-    if (of->mother_) {
-      of->mother_->children_.push_back(p);
-      p->mother_ = of->mother_;
-    }
-    return true;
-  }
-  std::cerr << "Error: when adding a relation, the last one must be either mother, father, children or siblings" << std::endl;
-  return false;
+  return relation::setRelation[relation](p, other);
 }
+
 
 bool parseDate(const std::string& s, struct Date* d) {
   if (s == "?")
@@ -200,6 +200,7 @@ bool parseDate(const std::string& s, struct Date* d) {
   }
   return false;
 }
+
 
 std::shared_ptr<struct Person> parsePerson(std::vector<std::string> args) {
   std::string fname = args[0];
@@ -225,6 +226,7 @@ std::shared_ptr<struct Person> parsePerson(std::vector<std::string> args) {
   return std::make_shared<struct Person>(fname, lname, sex, birth);
 }
 
+
 std::vector<std::string> parseLine(const std::string& line, char sep) {
   std::vector<std::string> command = std::vector<std::string>();
   unsigned start = 0;
@@ -241,6 +243,16 @@ std::vector<std::string> parseLine(const std::string& line, char sep) {
   }
   return command;
 }
-/* utilities */
+
+int parseId(const std::string& arg) {
+  int id;
+  if (sscanf(arg.c_str(), "%d", &id) != 1) {
+     std::cerr << "ID " << arg << "is not an valid" << std::endl;
+     return -1;
+  }
+  return id;
+}
+
+} // namespace utils
 
 } // namespace genea

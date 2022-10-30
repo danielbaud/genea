@@ -27,16 +27,17 @@ current_(nullptr),
 people_(std::vector<std::shared_ptr<struct Person>>()),
 commands_({
   { "help", std::bind(&CLI::help, this, std::placeholders::_1) },
-  { "create", std::bind(&CLI::create, this, std::placeholders::_1)},
-  { "add", std::bind(&CLI::add, this, std::placeholders::_1)},
-  { "attach", std::bind(&CLI::attach, this, std::placeholders::_1)},
-  { "remove", std::bind(&CLI::remove, this, std::placeholders::_1)},
-  { "overwrite", std::bind(&CLI::overwrite, this, std::placeholders::_1)},
-  { "info", std::bind(&CLI::info, this, std::placeholders::_1)},
-  { "list", std::bind(&CLI::list, this, std::placeholders::_1)},
-  { "select", std::bind(&CLI::select, this, std::placeholders::_1)},
-  { "dump", std::bind(&CLI::dump, this, std::placeholders::_1)},
-  { "generate-image", std::bind(&CLI::generateImage, this, std::placeholders::_1)}
+  { "create", std::bind(&CLI::create, this, std::placeholders::_1) },
+  { "add", std::bind(&CLI::add, this, std::placeholders::_1) },
+  { "attach", std::bind(&CLI::attach, this, std::placeholders::_1) },
+  { "remove", std::bind(&CLI::remove, this, std::placeholders::_1) },
+  { "overwrite", std::bind(&CLI::overwrite, this, std::placeholders::_1) },
+  { "info", std::bind(&CLI::info, this, std::placeholders::_1) },
+  { "list", std::bind(&CLI::list, this, std::placeholders::_1) },
+  { "search", std::bind(&CLI::search, this, std::placeholders::_1) },
+  { "select", std::bind(&CLI::select, this, std::placeholders::_1) },
+  { "dump", std::bind(&CLI::dump, this, std::placeholders::_1) },
+  { "generate-image", std::bind(&CLI::generateImage, this, std::placeholders::_1) }
 }) {
   if (isatty(STDIN_FILENO))
     std::cerr << banner << std::endl;
@@ -51,7 +52,7 @@ commands_({
     std::cout << "Created empty tree" << std::endl;
     return;
   }
-  // parse file
+  // utils::parse file
   f.close();
   std::cout << "Tree loaded from " << file << std::endl;
 }
@@ -66,7 +67,7 @@ void CLI::run() {
   bool exit = false;
 
   while (!std::cin.eof() && !exit) {
-    std::vector<std::string> command = parseLine(line, ' ');
+    std::vector<std::string> command = utils::parseLine(line, ' ');
     if (command.size()) {
       std::string arg0 = command[0];
       if (!commands_.contains(arg0)) {
@@ -107,7 +108,9 @@ void CLI::help(commandArgs args) {
   std::cerr << std::endl << "Information commands:" << std::endl;
   std::cerr << "\t info\t\t\t\t\t Displays information about the current person" << std::endl;
   std::cerr << "\t info <relation>\t\t\t Displays information about the <relation> of the current person" << std::endl;
+  std::cerr << "\t info <id>\t\t\t Displays information about the person whose ID is <id>" << std::endl;
   std::cerr << "\t list\t\t\t\t\t Displays a list of all people of the tree with their given ID" << std::endl;
+  std::cerr << "\t search <name>\t\t\t\t Displays all the people whose first name or last name matches <name>" << std::endl;
 
   // Move commands
   std::cerr << std::endl << "Move commands:" << std::endl;
@@ -132,7 +135,7 @@ void CLI::create(commandArgs args) {
     std::cerr << "Usage:" << std::endl << "\t create <first name> <last name> <sex> <birth> [<death>]" << std::endl;
     return;
   }
-  std::shared_ptr<struct Person> created = parsePerson(args);
+  std::shared_ptr<struct Person> created = utils::parsePerson(args);
   if (!created) {
     std::cerr << "create: Could not create person" << std::endl;
     return;
@@ -155,8 +158,8 @@ void CLI::add(commandArgs args) {
     std::cerr << "Usage:" << std::endl << "\t add <relation> <first name> <last name> <sex> <birth> [<death>]" << std::endl;
     return;
   }
-  std::vector<std::string> relationChain = parseLine(args[0], '.');
-  std::vector<std::shared_ptr<struct Person>> p = computeRelation(std::vector<std::string>(relationChain.begin(), relationChain.end() - 1), current_);
+  std::vector<std::string> relationChain = utils::parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> p = utils::computeRelation(std::vector<std::string>(relationChain.begin(), relationChain.end() - 1), current_);
   if (!p.size()) {
     std::cerr << "add: Could not get to that relation" << std::endl;
     return;
@@ -165,12 +168,12 @@ void CLI::add(commandArgs args) {
     std::cerr << "add: Grouping relation must be last" << std::endl;
     return;
   }
-  std::shared_ptr<struct Person> created = parsePerson(std::vector<std::string>(args.begin() + 1, args.end()));
+  std::shared_ptr<struct Person> created = utils::parsePerson(std::vector<std::string>(args.begin() + 1, args.end()));
   if (!created) {
     std::cerr << "add: Could not create person" << std::endl;
     return;
   }
-  if (!setRelation(relationChain.back(), p[0], created)) {
+  if (!utils::setRelation(relationChain.back(), p[0], created)) {
     std::cerr << "add: Could not create relation" << std::endl;
     return;
   }
@@ -180,7 +183,43 @@ void CLI::add(commandArgs args) {
 }
 
 void CLI::attach(commandArgs args) {
-  return;
+  if (!current_) {
+    std::cerr << "overwrite: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    return;
+  }
+  if (args.size() != 2 && args.size() != 3) {
+    std::cerr << "Usage:" << std::endl << "\t attach <relation> <id>" << std::endl << "\t attach <relation> <id1> <id2>" << std::endl;
+    return;
+  }
+  std::vector<std::string> relationChain = utils::parseLine(args[0], '.');
+  int id1 = utils::parseId(args[1]);
+  if (id1 < 0 || id1 >= people_.size()) {
+    std::cerr << "attach: " << args[1] << "is not a valid ID" << std::endl;
+    return;
+  }
+  std::vector<std::shared_ptr<struct Person>> p = utils::computeRelation(std::vector<std::string>(relationChain.begin(), relationChain.end() - 1), current_);
+  if (!p.size()) {
+    std::cerr << "attach: Could not get to that relation" << std::endl;
+    return;
+  }
+  if (p.size() > 1) {
+    std::cerr << "attach: Grouping relation must be last" << std::endl;
+    return;
+  }
+  if (args.size() == 3) {
+    int id2 = utils::parseId(args[2]);
+    if (id2 < 0 || id2 >= people_.size()) {
+      std::cerr << "attach: " << args[2] << "is not a valid ID" << std::endl;
+      return;
+    }
+    if (!utils::setRelation(relationChain.back(), people_[id1], people_[id2])) {
+      std::cerr << "attach: Could not set relation" << std::endl;
+    }
+    return;
+  }
+  if (!utils::setRelation(relationChain.back(), current_, people_[id1])) {
+     std::cerr << "attach: Could not set relation" << std::endl;
+  }
 }
 
 void CLI::remove(commandArgs args) {
@@ -196,7 +235,7 @@ void CLI::overwrite(commandArgs args) {
     std::cerr << "Usage:" << std::endl << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
     return;
   }
-  std::shared_ptr<struct Person> created = parsePerson(args);
+  std::shared_ptr<struct Person> created = utils::parsePerson(args);
   if (!created) {
     std::cerr << "overwrite: Could not modify person" << std::endl;
     return;
@@ -215,20 +254,25 @@ void CLI::info(commandArgs args) {
     return;
   }
   if (args.size() > 1) {
-    std::cerr << "Usage:" << std::endl << "\t info [<relation>]" << std::endl;
+    std::cerr << "Usage:" << std::endl << "\t info [<relation> | <id>]" << std::endl;
     return;
   }
   if (args.empty()) {
     current_->info();
     return;
   }
-  std::vector<std::string> relationChain = parseLine(args[0], '.');
-  std::vector<std::shared_ptr<struct Person>> people = computeRelation(relationChain, current_);
+  int id = utils::parseId(args[0]);
+  if (id >= 0 && id < people_.size()) {
+    people_[id]->info();
+    return;
+  }
+  std::vector<std::string> relationChain = utils::parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> people = utils::computeRelation(relationChain, current_);
   if (!people.size()) {
     std::cout << "Nobody" << std::endl;
     return;
   }
-  for (auto person : people) {
+  for (auto& person : people) {
     person->info();
   }
 }
@@ -239,9 +283,28 @@ void CLI::list(commandArgs args) {
     std::cout << "No person exists yet" << std::endl;
     return;
   }
-  for (auto person : people_) {
+  for (auto& person : people_) {
     std::cout << i << ") ";
     person->info();
+    i++;
+  }
+}
+
+void CLI::search(commandArgs args) {
+  if (args.size() != 1) {
+    std::cerr << "Usage:" << std::endl << "\t search <name>" << std::endl;
+    return;
+  }
+  if (people_.empty()) {
+    std::cout << "No person exists yet" << std::endl;
+    return;
+  }
+  unsigned i = 0;
+  for (auto& person : people_) {
+    if (person->firstName_ == args[0] || person->lastName_ == args[0]) {
+      std::cout << i << ") ";
+      person->info();
+    }
     i++;
   }
 }
@@ -255,18 +318,18 @@ void CLI::select(commandArgs args) {
     std::cerr << "Usage:" << std::endl << "\t select <relation>" << std::endl << "\t select <id>" << std::endl;
     return;
   }
-  int id;
-  if (sscanf(args[0].c_str(), "%d", &id) == 1) {
+  int id = utils::parseId(args[0]);
+  if (id != -1) {
     if (id < 0 || id >= people_.size()) {
-      std::cerr << "select: invalid/non-existent ID" << std::endl;
+      std::cerr << "select: ID does not exist" << std::endl;
       return;
     }
     current_ = people_[id];
     current_->info();
     return;
   }
-  std::vector<std::string> relationChain = parseLine(args[0], '.');
-  std::vector<std::shared_ptr<struct Person>> p = computeRelation(relationChain, current_);
+  std::vector<std::string> relationChain = utils::parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> p = utils::computeRelation(relationChain, current_);
   if (!p.size()) {
     std::cerr << "select: Could not get to that relation" << std::endl;
     return;
