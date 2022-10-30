@@ -84,7 +84,7 @@ void CLI::run() {
 
 /* commands */
 void CLI::help(commandArgs args) {
-  std::cerr << std::endl << "At all times (except when no person exists), a cursor is on a person on the genealogic tree" << std::endl;
+  std::cerr << std::endl << "At all times (except when no person exists), the cursor is on a person on the genealogic tree" << std::endl;
   
   // General commands
   std::cerr << std::endl << "General commands:" << std::endl;
@@ -99,7 +99,7 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t attach <relation> <id>\t\t\t Sets the person whose ID is <id> to be <relation> of the current person" << std::endl;
   std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id1> to be <relation> of the person whose ID is <id2>" << std::endl;
   std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person" << std::endl;
-  std::cerr << "\t remove <id> \t\t\t Removes the person whose ID is <id>" << std::endl;
+  std::cerr << "\t remove <id> \t\t\t\t Removes the person whose ID is <id>" << std::endl;
   std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
   std::cerr << "\t\t\t\t\t\t Overwrite the current person with given information" << std::endl;
 
@@ -121,10 +121,10 @@ void CLI::help(commandArgs args) {
 
   // Relations
   std::cerr << std::endl << "Available relations are:" << std::endl;
-  std::cerr << "\t father, mother, child:<first name>, sibling:<first name>, children (info only), siblings (info only)" << std::endl;
+  std::cerr << "\t father, mother, child:<first name>, sibling:<first name>, child (grouping), sibling (grouping)" << std::endl;
   std::cerr << std::endl << "Relations can be chained separated by a point ('.')" << std::endl;
   std::cerr << "\t Ex: select father.mother.sibling[Alice].child[Bob].father" << std::endl;
-  std::cerr << "\t Ex: info child[Charlie].mother.siblings" << std::endl << std::endl;
+  std::cerr << "\t Ex: info child[Charlie].mother.sibling" << std::endl << std::endl;
 }
 
 void CLI::create(commandArgs args) {
@@ -192,6 +192,10 @@ void CLI::overwrite(commandArgs args) {
 }
 
 void CLI::info(commandArgs args) {
+  if (!current_) {
+    std::cerr << "info: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    return;
+  }
   if (args.size() > 1) {
     std::cerr << "Usage:" << std::endl << "\t info [<relation>]" << std::endl;
     return;
