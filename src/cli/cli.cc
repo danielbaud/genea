@@ -59,7 +59,9 @@ commands_({
     return;
   }
   people_ = people;
+  current_ = people_[0];
   std::cout << "Tree loaded from " << file << std::endl;
+  std::cout << "(Cursor set to ID 0)" << std::endl;
 }
 
 void CLI::run() {
