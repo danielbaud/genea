@@ -188,7 +188,25 @@ void CLI::remove(commandArgs args) {
 }
 
 void CLI::overwrite(commandArgs args) {
-  return;
+  if (!current_) {
+    std::cerr << "overwrite: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    return;
+  }
+  if (args.size() != 4 && args.size() != 5) {
+    std::cerr << "Usage:" << std::endl << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
+    return;
+  }
+  std::shared_ptr<struct Person> created = parsePerson(args);
+  if (!created) {
+    std::cerr << "overwrite: Could not modify person" << std::endl;
+    return;
+  }
+  current_->firstName_ = created->firstName_;
+  current_->lastName_ = created->lastName_;
+  current_->sex_ = created->sex_;
+  current_->born_ = created->born_;
+  current_->dead_ = created->dead_;
+  current_->info();
 }
 
 void CLI::info(commandArgs args) {
