@@ -100,7 +100,7 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t attach <relation> <id>\t\t\t Sets the person whose ID is <id> to be <relation> of the current person" << std::endl;
   std::cerr << "\t attach <relation> <id1> <id2>\t\t Sets the person whose ID is <id1> to be <relation> of the person whose ID is <id2>" << std::endl;
   std::cerr << "\t remove <relation> \t\t\t Removes the person who is <relation> of the current person" << std::endl;
-  std::cerr << "\t remove <id> \t\t\t\t Removes the person whose ID is <id>" << std::endl;
+  std::cerr << "\t remove <id> \t\t\t\t Removes the person whose ID is <id>. Warning, the person is entirely removed" << std::endl;
   std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
   std::cerr << "\t\t\t\t\t\t Overwrite the current person with given information" << std::endl;
 
@@ -184,7 +184,7 @@ void CLI::add(commandArgs args) {
 
 void CLI::attach(commandArgs args) {
   if (!current_) {
-    std::cerr << "overwrite: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    std::cerr << "attach: You must create at least one person before. Your cursor is nobody!" << std::endl;
     return;
   }
   if (args.size() != 2 && args.size() != 3) {
@@ -223,7 +223,47 @@ void CLI::attach(commandArgs args) {
 }
 
 void CLI::remove(commandArgs args) {
-  return;
+  if (!current_) {
+    std::cerr << "remove: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    return;
+  }
+  if (args.size() != 1) {
+    std::cerr << "Usage:" << std::endl << "\t remove <relation>" << std::endl << "\t remove <id>" << std::endl;
+    return;
+  }
+  int id = utils::parseId(args[0]);
+  if (id >= 0 && id < people_.size()) {
+    utils::rmRelation("father", people_[id]);
+    utils::rmRelation("mother", people_[id]);
+    for (auto &child : people_[id]->children_) {
+      utils::rmRelation("child:" + child->firstName_, people_[id]);
+    }
+    if (current_ == people_[id]) {
+      if (people_.size() == 1) {
+        std::cout << "Warning: cursor set to nobody" << std::endl;
+        current_ = nullptr;
+      } else {
+        int newCursor = id == 0 ? 1 : 0;
+        std::cout << "(Cursor set to person 0)" << std::endl;
+        current_ = people_[newCursor];
+      }
+    }
+    people_.erase(people_.begin() + id);
+    return;
+  }
+  std::vector<std::string> relationChain = utils::parseLine(args[0], '.');
+  std::vector<std::shared_ptr<struct Person>> p = utils::computeRelation(relationChain, current_);
+  if (!p.size()) {
+    std::cerr << "remove: Could not get to that relation" << std::endl;
+    return;
+  }
+  if (p.size() > 1) {
+    std::cerr << "remove: Can't remove a grouping relation" << std::endl;
+    return;
+  }
+  if (!utils::rmRelation(relationChain.back(), p[0])) {
+    std::cerr << "remove: Could not remove relation" << std::endl;
+  }
 }
 
 void CLI::overwrite(commandArgs args) {

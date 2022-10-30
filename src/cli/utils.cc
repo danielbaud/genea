@@ -114,6 +114,63 @@ bool setSibling(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person>
   return true;
 }
 
+bool rmFather(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier != "") {
+    std::cerr << "father: can't use specifier" << std::endl;
+    return false;
+  }
+  if (!p->father_) {
+    std::cerr << "Warning: father does not exist" << std::endl;
+    return false;
+  }
+  auto child = std::find(p->father_->children_.begin(), p->father_->children_.end(), p);
+  assert(child != p->father_->children_.end());
+  p->father_->children_.erase(child);
+  p->father_ = nullptr;
+  return true;
+}
+
+bool rmMother(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier != "") {
+    std::cerr << "mother: can't use specifier" << std::endl;
+    return false;
+  }
+  if (!p->mother_) {
+    std::cerr << "Warning: mother does not exist" << std::endl;
+    return false;
+  }
+  auto child = std::find(p->mother_->children_.begin(), p->mother_->children_.end(), p);
+  assert(child != p->mother_->children_.end());
+  p->mother_->children_.erase(child);
+  p->mother_ = nullptr;
+  return true;
+}
+
+bool rmChild(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  if (specifier == "") {
+    std::cerr << "child: needs a specifier" << std::endl;
+    return false;
+  }
+  auto child = std::find_if(p->children_.begin(), p->children_.end(), [&specifier](std::shared_ptr<struct Person> c) {
+    return c->firstName_ == specifier;
+  });
+  if (child == p->children_.end()) {
+    std::cerr << "child: " << specifier << " not found" << std::endl;
+    return false;
+  }
+  if (p == (*child)->mother_) {
+    (*child)->mother_ = nullptr;
+    p->children_.erase(child);
+    return true;
+  }
+  if (p == (*child)->father_) {
+    (*child)->father_ = nullptr;
+    p->children_.erase(child);
+    return true;
+  }
+  assert(false);
+}
+
 std::map<std::string, std::function<std::shared_ptr<struct Person>(std::shared_ptr<struct Person>, std::string)>> getRelation = {
   { "father", &father },
   { "mother", &mother },
@@ -131,6 +188,12 @@ std::map<std::string, std::function<bool(std::shared_ptr<struct Person>, std::sh
   { "mother", &setMother },
   { "child", &setChild },
   { "sibling", &setSibling }
+};
+
+std::map<std::string, std::function<bool(std::shared_ptr<struct Person>, std::string)>> rmRelation = {
+  { "father", &rmFather },
+  { "mother", &rmMother },
+  { "child", &rmChild }
 };
 
 
@@ -178,6 +241,16 @@ bool setRelation(const std::string& relation, std::shared_ptr<struct Person> p, 
   return relation::setRelation[relation](p, other);
 }
 
+bool rmRelation(const std::string& relation, std::shared_ptr<struct Person> p) {
+  auto colon = relation.find(':');
+  std::string rel = (colon == std::string::npos ? relation : relation.substr(0, colon));
+  std::string spec = (colon == std::string::npos ? "" : relation.substr(colon + 1));
+  if (!relation::rmRelation.contains(rel)) {
+    std::cerr << "Relation '" << relation << "' (last): Unknown relation" << std::endl;
+    return false;
+  }
+  return relation::rmRelation[rel](p, spec);
+}
 
 bool parseDate(const std::string& s, struct Date* d) {
   if (s == "?")
