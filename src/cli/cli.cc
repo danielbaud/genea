@@ -59,9 +59,14 @@ commands_({
     return;
   }
   people_ = people;
+  int i = 0;
+  for (auto& person : people_) {
+    person->id = i;
+    i++;
+  }
   current_ = people_[0];
   std::cout << "Tree loaded from " << file << std::endl;
-  std::cout << "(Cursor set to ID 0)" << std::endl;
+  std::cout << "(Cursor set to person ID 0)" << std::endl;
 }
 
 void CLI::run() {
@@ -147,8 +152,9 @@ void CLI::create(commandArgs args) {
     std::cerr << "create: Could not create person" << std::endl;
     return;
   }
+  created->id = people_.size();
   people_.push_back(created);
-  std::cout << "Created person ID " << people_.size() - 1 << std::endl;
+  std::cout << "Created person ID " << created->id << std::endl;
   if (!current_) {
     current_ = created;
     std::cout << "(Cursor set to this person)" << std::endl;
@@ -184,8 +190,9 @@ void CLI::add(commandArgs args) {
     std::cerr << "add: Could not create relation" << std::endl;
     return;
   }
+  created->id = people_.size();
   people_.push_back(created);
-  std::cout << "Created person ID " << people_.size() - 1 << std::endl;
+  std::cout << "Created person ID " << created->id << std::endl;
   created->info();
 }
 
@@ -256,6 +263,9 @@ void CLI::remove(commandArgs args) {
       }
     }
     people_.erase(people_.begin() + id);
+    for (auto person = people_.begin() + id; person != people_.end(); ++person) {
+      (*person)->id--;
+    }
     return;
   }
   std::vector<std::string> relationChain = utils::parseLine(args[0], '.');
@@ -325,15 +335,12 @@ void CLI::info(commandArgs args) {
 }
 
 void CLI::list(commandArgs args) {
-  unsigned i = 0;
   if (people_.empty()) {
     std::cout << "No person exists yet" << std::endl;
     return;
   }
   for (auto& person : people_) {
-    std::cout << i << ") ";
     person->info();
-    i++;
   }
 }
 
@@ -346,13 +353,10 @@ void CLI::search(commandArgs args) {
     std::cout << "No person exists yet" << std::endl;
     return;
   }
-  unsigned i = 0;
   for (auto& person : people_) {
     if (person->firstName_ == args[0] || person->lastName_ == args[0]) {
-      std::cout << i << ") ";
       person->info();
     }
-    i++;
   }
 }
 
@@ -390,6 +394,10 @@ void CLI::select(commandArgs args) {
 }
 
 void CLI::dump(commandArgs args) {
+  if (!people_.size()) {
+    std::cerr << "Nobody exists" << std::endl;
+    return;
+  }
   if (args.size() != 1) {
     std::cerr << "Usage:" << std::endl << "\t dump <file>" << std::endl;
     return;

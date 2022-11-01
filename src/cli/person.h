@@ -45,14 +45,14 @@ public:
   Person(const std::string& firstName, const std::string& lastName, Sex sex, struct Date born, struct Date dead):
   firstName_(firstName), lastName_(lastName), sex_(sex), born_(born), dead_(dead), mother_(nullptr), father_(nullptr), children_({}), id(-1) {};
 
-  void info() {
-    std::cout << (sex_ == Sex::MALE ? "Mr " : "Ms ");
+  void info(int space = 1) {
+    std::cout << "Person ID " << id << std::endl;
+    std::cout << std::string(space, ' ') << (sex_ == Sex::MALE ? "(M) " : "(F) ");
     std::cout << firstName_ << ' ' << lastName_ << std::endl;
-    std::cout << "  Born on " << born_.toString() << std::endl;
+    std::cout << std::string(space, ' ') << born_.toString() << " - ";
     if (dead_)
-      std::cout << "  Died on " << dead_->toString() << std::endl;
-    std::cout << "  " << (sex_ == Sex::MALE ? "Son" : "Daughter") << " of " << (father_ ? father_->firstName_ : "unknown");
-    std::cout << " and " << (mother_ ? mother_->firstName_ : "unknown") << ", has " << children_.size() << " children" << std::endl;
+      std::cout << dead_->toString();
+    std::cout << std::endl;
   }
 
   std::string dump() {
@@ -70,7 +70,7 @@ public:
 
   std::vector<std::shared_ptr<struct Person>> children_;
 
-  int id; // for dumping functions
+  int id;
 };
 
 

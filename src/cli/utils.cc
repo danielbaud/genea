@@ -96,7 +96,7 @@ bool setMother(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> 
 }
 
 bool setChild(std::shared_ptr<struct Person> p, std::shared_ptr<struct Person> other) {
-  if (other->sex_ == Sex::MALE)
+  if (p->sex_ == Sex::MALE)
     return setFather(other, p);
   return setMother(other, p);
 }
@@ -222,7 +222,7 @@ std::vector<std::shared_ptr<struct Person>> computeRelation(std::vector<std::str
     if (relation::getRelation.contains(rel)) {
       p = relation::getRelation[rel](p, spec);
       if (!p) {
-        std::cerr << "Relation '" << r << "' (" << cpt << "): does not exist" << std::endl;
+        std::cerr << "Relation '" << r << "' (" << cpt << "): is not set" << std::endl;
         return {};
       }
     } else {
@@ -325,7 +325,6 @@ std::vector<std::string> parseLine(const std::string& line, char sep) {
 int parseId(const std::string& arg) {
   int id;
   if (sscanf(arg.c_str(), "%d", &id) != 1) {
-     std::cerr << "ID " << arg << "is not an valid" << std::endl;
      return -1;
   }
   return id;
@@ -365,6 +364,7 @@ std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in) {
       setRelation("mother", res[i], res[id2]);
   }
   in.close();
+  std::cout << "Loaded " << res.size() << " people" << std::endl;
   return res;
 }
 
