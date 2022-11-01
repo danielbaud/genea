@@ -37,6 +37,7 @@ commands_({
   { "search", std::bind(&CLI::search, this, std::placeholders::_1) },
   { "select", std::bind(&CLI::select, this, std::placeholders::_1) },
   { "dump", std::bind(&CLI::dump, this, std::placeholders::_1) },
+  { "load", std::bind(&CLI::load, this, std::placeholders::_1)},
   { "generate-image", std::bind(&CLI::generateImage, this, std::placeholders::_1) }
 }) {
   if (isatty(STDIN_FILENO))
@@ -130,8 +131,9 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t select <id>\t\t\t\t Moves the cursor to the person whose ID is <id>" << std::endl;
 
   // Dump commands
-  std::cerr << std::endl << "Dump commands:" << std::endl;
+  std::cerr << std::endl << "File commands:" << std::endl;
   std::cerr << "\t dump <file>\t\t\t\t Dumps the current tree to <file>" << std::endl;
+  std::cerr << "\t load <file>\t\t\t\t Loads the file <file> into the current tree" << std::endl;
   std::cerr << "\t generate-image <file>\t\t\t Generates a graph view of the genealogical tree to <file>" << std::endl;
 
   // Relations
@@ -419,6 +421,32 @@ void CLI::dump(commandArgs args) {
   }
   out.close();
   std::cout << "Tree dumped to " << args[0] << std::endl;
+}
+
+void CLI::load(commandArgs args) {
+  if (args.size() != 1) {
+    std::cerr << "Usage:" << std::endl << "\t load <file>" << std::endl;
+    return;
+  }
+  std::ifstream in(args[0]);
+  if (!in.good()) {
+    std::cerr << "load: Could not open " << args[0] << std::endl;
+    return;
+  }
+  std::vector<std::shared_ptr<struct Person>> people = utils::parseFile(in);
+  if (!people.size()) {
+    std::cerr << "load: Could not load file" << std::endl;
+    return;
+  }
+  int i = 0;
+  for (auto& person : people) {
+    person->id = i + people_.size();
+    people_.push_back(person);
+  }
+  if (!current_) {
+    current_ = people_[0];
+    std::cout << "(Cursor set to ID 0)" << std::endl;
+  }
 }
 
 void CLI::generateImage(commandArgs args) {

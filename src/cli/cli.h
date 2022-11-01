@@ -59,6 +59,7 @@ private:
   void search(commandArgs args);
   void select(commandArgs args);
   void dump(commandArgs args);
+  void load(commandArgs args);
   void generateImage(commandArgs args);
   /* commands */
 };
