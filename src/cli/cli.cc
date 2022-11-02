@@ -251,8 +251,8 @@ void CLI::remove(commandArgs args) {
   if (id >= 0 && id < people_.size()) {
     utils::rmRelation("father", people_[id]);
     utils::rmRelation("mother", people_[id]);
-    for (auto &child : people_[id]->children_) {
-      utils::rmRelation("child:" + child->firstName_, people_[id]);
+    while (people_[id]->children_.size()) {
+      utils::rmRelation("child:" + people_[id]->children_[0]->firstName_, people_[id]);
     }
     if (current_ == people_[id]) {
       if (people_.size() == 1) {
