@@ -107,7 +107,7 @@ void CLI::help(commandArgs args) {
   // Creation/Deletion commands
   std::cerr << std::endl << "Creation/Deletion commands:" << std::endl;
   std::cerr << "\t create <first name> <last name> <sex> <birth> [<death>]" << std::endl;
-  std::cerr << "\t\t\t\t\t\t Creates a new person which is linked to nobody. It will be reachable from IDs" << std::endl;
+  std::cerr << "\t\t\t\t\t\t Creates a new person which is related to nobody. It will be reachable from IDs" << std::endl;
   std::cerr << "\t add <relation> <first name> <last name> <sex> <birth> [<death>]" << std::endl;
   std::cerr << "\t\t\t\t\t\t Creates a new person which is <relation> of the current person" << std::endl;
   std::cerr << "\t overwrite <first name> <last name> <sex> <birth> [<death>]" << std::endl;
@@ -135,7 +135,8 @@ void CLI::help(commandArgs args) {
   std::cerr << "\t dump <file>\t\t\t\t Dumps the current tree to <file>" << std::endl;
   std::cerr << "\t load <file>\t\t\t\t Loads the file <file> into the current tree" << std::endl;
   std::cerr << "\t generate-image <file>\t\t\t Generates a graph view of the genealogical tree to <file>" << std::endl;
-
+  std::cerr << "\t\t\t\t\t\t The generated graph will not contain people that are not related to the current person" << std::endl;
+  std::cerr << "\t\t\t\t\t\t (e.g loaded people or created & non-attached people)" << std::endl;
   // Relations
   std::cerr << std::endl << "Available relations are:" << std::endl;
   std::cerr << "\t father, mother, child:<first name>, sibling:<first name>, child (grouping), sibling (grouping)" << std::endl;
@@ -450,7 +451,21 @@ void CLI::load(commandArgs args) {
 }
 
 void CLI::generateImage(commandArgs args) {
-  std::cerr << "Still not supported" << std::endl;
+  if (!current_) {
+    std::cerr << "generate-image: You must create at least one person before. Your cursor is nobody!" << std::endl;
+    return;
+  }
+  if (args.size() != 1) {
+    std::cerr << "Usage:" << std::endl << "\t generate-image <file>" << std::endl;
+    return;
+  }
+  auto gens = utils::generations(current_, people_.size());
+  for (auto& gen : gens) {
+    std::cout << "--Generation--" << std::endl;
+    for (auto& person: gen) {
+      person->info();
+    }
+  }
 }
 /* commands */
 

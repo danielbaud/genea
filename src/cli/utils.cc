@@ -1,5 +1,6 @@
 #include "person.h"
 #include <map>
+#include <utility>
 #include <fstream>
 #include <functional>
 #include <cassert>
@@ -365,6 +366,47 @@ std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in) {
   }
   in.close();
   std::cout << "Loaded " << res.size() << " people" << std::endl;
+  return res;
+}
+
+// recursive exploration
+void treeExplore(
+  std::shared_ptr<struct Person> p,
+  int level,
+  std::vector<std::pair<int, std::shared_ptr<struct Person>>>& list,
+  std::vector<bool>& map
+) {
+  if (!p || map[p->id]) {
+    return;
+  }
+  map[p->id] = true;
+  list.push_back(std::make_pair(level, p));
+  treeExplore(p->father_, level - 1, list, map);
+  treeExplore(p->mother_, level - 1, list, map);
+  for (auto& child : p->children_) {
+    treeExplore(child, level + 1, list, map);
+  }
+}
+
+std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared_ptr<struct Person> start, int maxPeople) {
+  std::vector<std::pair<int, std::shared_ptr<struct Person>>> people;
+  std::vector<bool> travelMap = std::vector<bool>(maxPeople, false);
+  treeExplore(start, 0, people, travelMap);
+  int minGen = 0;
+  int maxGen = 0;
+  for (auto& person : people) {
+    if (person.first < minGen)
+      minGen = person.first;
+    if (person.first > maxGen)
+      maxGen = person.first;
+  }
+  auto res = std::vector<std::vector<std::shared_ptr<struct Person>>>(
+    maxGen - minGen + 1, 
+    std::vector<std::shared_ptr<struct Person>>()
+  );
+  for (auto& person : people) {
+    res[person.first - minGen].push_back(person.second);
+  }
   return res;
 }
 

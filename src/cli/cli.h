@@ -27,6 +27,7 @@ bool parseDate(const std::string& s, struct Date* d);
 std::vector<std::string> parseLine(const std::string& line, char sep);
 int parseId(const std::string& arg);
 std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in);
+std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared_ptr<struct Person> start, int maxPeople);
 
 } // namespace utils
 
