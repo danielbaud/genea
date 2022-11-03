@@ -1,5 +1,6 @@
 #include "person.h"
 #include <map>
+#include <algorithm>
 #include <utility>
 #include <fstream>
 #include <functional>
@@ -411,7 +412,7 @@ std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared
 }
 
 std::string uniqueDualId(std::shared_ptr<struct Person> a, std::shared_ptr<struct Person> b) {
-  return "r" + std::to_string(a->id + b->id) + "x" + std::to_string(a->id * b->id);
+  return "r" + std::to_string(std::min(a->id, b->id)) + "x" + std::to_string(std::max(a->id, b->id));
 }
 
 } // namespace utils

@@ -64,8 +64,8 @@ public:
   std::string dot() {
     std::string name = dotId();
     std::string color = sex_ == Sex::MALE ? "lightblue" : "pink";
-    std::string label = firstName_ + ' ' + lastName_ + "\\n" + born_.toString() + " - " + (dead_ ? dead_->toString() : "");
-    return name + " [shape=box, style=filled, color=" + color + ", label=\"" + label + "\"]";
+    std::string label = "<B>" + firstName_ + ' ' + lastName_ + "</B><br/>" + born_.toString() + " - " + (dead_ ? dead_->toString() : "");
+    return name + " [shape=box, style=filled, color=" + color + ", label=< " + label + " >]";
   }
 
   std::string dump() {
