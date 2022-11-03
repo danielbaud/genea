@@ -410,6 +410,9 @@ std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared
   return res;
 }
 
+std::string uniqueDualId(std::shared_ptr<struct Person> a, std::shared_ptr<struct Person> b) {
+  return "r" + std::to_string(a->id + b->id) + "x" + std::to_string(a->id * b->id);
+}
 
 } // namespace utils
 

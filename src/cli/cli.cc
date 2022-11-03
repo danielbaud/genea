@@ -4,6 +4,7 @@
 #include <fstream>
 #include <cstdio>
 #include <unistd.h>
+#include <set>
 
 namespace genea {
 
@@ -469,41 +470,57 @@ void CLI::generateImage(commandArgs args) {
   auto gens = utils::generations(current_, people_.size());
   int iGen = 0;
   assert(gens.size() > 0);
+  // from oldest to get a proper order
+  gens = utils::generations(gens[0][0], people_.size());
 
-  out << "digraph G {" << std::endl;
-  out << "graph [newrank=true, ranksep=0.2, concentrate=true]" << std::endl;
+  out << "graph G {" << std::endl;
+  out << "graph [newrank=true, ranksep=1, concentrate=true, overlap=false]" << std::endl;
   out << "edge [dir=none]" << std::endl;
   while (iGen < gens.size()) {
     out << "subgraph gen" << iGen << " {" << std::endl << "rank = same" << std::endl;
-    // conceptual Person in between parents & children
-    auto parents = std::vector<std::pair<std::shared_ptr<struct Person>, std::shared_ptr<struct Person>>>();
+    std::set<int> ids = {};
+    std::string prevId = "";
     for (auto& person : gens[iGen]) {
-      out << person->dot() << std::endl;
-      for (auto& child : person->children_) {
-        bool exists = false;
-        int i = 0;
-        if (child->father_ && child->mother_) {
-          auto parent = std::make_pair(child->father_, child->mother_);
-          if (std::find(parents.begin(), parents.end(), parent) == parents.end())
-            parents.push_back(parent);
+      std::set<std::shared_ptr<struct Person>> spouses = {};
+      if (!ids.contains(person->id)) {
+        out << person->dot() << std::endl;
+        ids.insert(person->id);
+        for (auto& child : person->children_) {
+          if (child->father_ && child->mother_) {
+            if (child->father_ == person && !spouses.contains(child->mother_)) {
+              spouses.insert(child->mother_);
+            } else if (child->mother_ == person && !spouses.contains(child->father_)) {
+              spouses.insert(child->father_);
+            }
+          }
+        }
+        if (prevId != "") {
+          out << prevId << "--" << person->dotId() << " [style=invis]" << std::endl;
+        }
+        prevId = person->dotId();
+        bool firstSpouse = true;
+        for (auto& spouse : spouses) {
+          std::string comb = utils::uniqueDualId(person, spouse);
+          out << spouse->dot() << std::endl;;
+          out << comb << " [shape=point, width=0.05]" << std::endl;
+          out << person->dotId() << "--" << comb << "--" << spouse->dotId() << std::endl;
+          if (!firstSpouse)
+            out << prevId << "--" << comb << " [style=invis]" <<std::endl;
+          prevId = spouse->dotId();
+          ids.insert(spouse->id);
+          firstSpouse = false;
         }
       }
-    }
-    for (auto& parent : parents) {
-      std::string comb = parent.first->dotId() + "and" + parent.second->dotId();
-      out << comb << " [shape=point, width=0.05]" << std::endl;
-      out << parent.first->dotId() + ":e" << "->" << comb + ":w" << std::endl;
-      out << comb + ":e" << "->" << parent.second->dotId() + ":w" << std::endl;
     }
     out << '}' << std::endl;
 
     for (auto& person : gens[iGen]) {
       if (person->father_ && person->mother_) {
-        out << person->father_->dotId() + "and" + person->mother_->dotId() + ":s" << "->" << person->dotId() + ":n" << std::endl;
+        out << utils::uniqueDualId(person->father_, person->mother_)  + ":s" << "--" << person->dotId() + ":n" << std::endl;
       } else if (person->father_) {
-        out << person->father_->dotId() + ":s" << "->" << person->dotId() + ":n" << std::endl;
+        out << person->father_->dotId() + ":s" << "--" << person->dotId() + ":n" << std::endl;
       } else if (person->mother_) {
-        out << person->mother_->dotId() + ":s" << "->" << person->dotId() + ":n" << std::endl;
+        out << person->mother_->dotId() + ":s" << "--" << person->dotId() + ":n" << std::endl;
       }
     }
     iGen++;

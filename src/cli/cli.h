@@ -28,6 +28,7 @@ std::vector<std::string> parseLine(const std::string& line, char sep);
 int parseId(const std::string& arg);
 std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in);
 std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared_ptr<struct Person> start, int maxPeople);
+std::string uniqueDualId(std::shared_ptr<struct Person> a, std::shared_ptr<struct Person> b);
 
 } // namespace utils
 
