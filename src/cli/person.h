@@ -69,7 +69,7 @@ public:
   }
 
   std::string dump() {
-    return firstName_ + ' ' + lastName_ + ' ' + (sex_ == Sex::MALE ? 'M' : 'F') + ' ' + born_.toString() + (dead_ ? dead_->toString() : "");
+    return firstName_ + ' ' + lastName_ + ' ' + (sex_ == Sex::MALE ? 'M' : 'F') + ' ' + born_.toString() + ' ' + (dead_ ? dead_->toString() : "");
   }
 
   std::string firstName_;
