@@ -474,7 +474,7 @@ void CLI::generateImage(commandArgs args) {
   gens = utils::generations(gens[0][0], people_.size());
 
   out << "graph G {" << std::endl;
-  out << "graph [newrank=true, ranksep=1, concentrate=true, overlap=false]" << std::endl;
+  out << "graph [newrank=true, ranksep=1, concentrate=true, overlap=false, splines=true]" << std::endl;
   out << "edge [dir=none]" << std::endl;
   while (iGen < gens.size()) {
     out << "subgraph gen" << iGen << " {" << std::endl << "rank = same" << std::endl;
