@@ -39,6 +39,8 @@ struct Date {
 struct Person {
 
 public:
+  Person() {}
+
   Person(const std::string& firstName, const std::string& lastName, Sex sex, struct Date born):
   firstName_(firstName), lastName_(lastName), sex_(sex), born_(born), dead_({}), mother_(nullptr), father_(nullptr), children_({}), id(-1) {};
 
@@ -53,6 +55,17 @@ public:
     if (dead_)
       std::cout << dead_->toString();
     std::cout << std::endl;
+  }
+
+  std::string dotId() {
+    return "n" + std::to_string(id);
+  }
+
+  std::string dot() {
+    std::string name = dotId();
+    std::string color = sex_ == Sex::MALE ? "lightblue" : "pink";
+    std::string label = firstName_ + ' ' + lastName_ + "\\n" + born_.toString() + " - " + (dead_ ? dead_->toString() : "");
+    return name + " [shape=box, style=filled, color=" + color + ", label=\"" + label + "\"]";
   }
 
   std::string dump() {
@@ -72,6 +85,5 @@ public:
 
   int id;
 };
-
 
 } // namespace genea

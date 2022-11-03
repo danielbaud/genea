@@ -410,6 +410,7 @@ std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared
   return res;
 }
 
+
 } // namespace utils
 
 } // namespace genea

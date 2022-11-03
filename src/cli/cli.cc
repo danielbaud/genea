@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 #include <unistd.h>
 
 namespace genea {
@@ -459,13 +460,69 @@ void CLI::generateImage(commandArgs args) {
     std::cerr << "Usage:" << std::endl << "\t generate-image <file>" << std::endl;
     return;
   }
-  auto gens = utils::generations(current_, people_.size());
-  for (auto& gen : gens) {
-    std::cout << "--Generation--" << std::endl;
-    for (auto& person: gen) {
-      person->info();
-    }
+  std::string dotFile = args[0] + ".dot";
+  std::ofstream out(dotFile);
+  if (!out.good()) {
+    std::cerr << "generate-image: Could not write DOT file " << dotFile << std::endl;
+    return;
   }
+  auto gens = utils::generations(current_, people_.size());
+  int iGen = 0;
+  assert(gens.size() > 0);
+
+  out << "digraph G {" << std::endl;
+  out << "graph [newrank=true, ranksep=0.2, concentrate=true]" << std::endl;
+  out << "edge [dir=none]" << std::endl;
+  while (iGen < gens.size()) {
+    out << "subgraph gen" << iGen << " {" << std::endl << "rank = same" << std::endl;
+    // conceptual Person in between parents & children
+    auto parents = std::vector<std::pair<std::shared_ptr<struct Person>, std::shared_ptr<struct Person>>>();
+    for (auto& person : gens[iGen]) {
+      out << person->dot() << std::endl;
+      for (auto& child : person->children_) {
+        bool exists = false;
+        int i = 0;
+        if (child->father_ && child->mother_) {
+          auto parent = std::make_pair(child->father_, child->mother_);
+          if (std::find(parents.begin(), parents.end(), parent) == parents.end())
+            parents.push_back(parent);
+        }
+      }
+    }
+    for (auto& parent : parents) {
+      std::string comb = parent.first->dotId() + "and" + parent.second->dotId();
+      out << comb << " [shape=point, width=0.05]" << std::endl;
+      out << parent.first->dotId() + ":e" << "->" << comb + ":w" << std::endl;
+      out << comb + ":e" << "->" << parent.second->dotId() + ":w" << std::endl;
+    }
+    out << '}' << std::endl;
+
+    for (auto& person : gens[iGen]) {
+      if (person->father_ && person->mother_) {
+        out << person->father_->dotId() + "and" + person->mother_->dotId() + ":s" << "->" << person->dotId() + ":n" << std::endl;
+      } else if (person->father_) {
+        out << person->father_->dotId() + ":s" << "->" << person->dotId() + ":n" << std::endl;
+      } else if (person->mother_) {
+        out << person->mother_->dotId() + ":s" << "->" << person->dotId() + ":n" << std::endl;
+      }
+    }
+    iGen++;
+  }
+  out << "}" << std::endl;
+  out.close();
+
+  int status = system(("2> /dev/null dot -Tpng " + dotFile + " 1> " + args[0]).c_str());
+  if (status == 127) {
+    std::cerr << "generate-image: Graphviz is not installed. Generated DOT file at " << dotFile << std::endl;
+    return;
+  }
+  //std::remove(dotFile.c_str());
+  if (status) {
+    std::cerr << "generate-image: error in image generation from graphviz (code " << status << ")" << std::endl;
+    std::remove(args[0].c_str());
+    return;
+  }
+  std::cout << "Generated PNG file at " << args[0] << std::endl;
 }
 /* commands */
 
