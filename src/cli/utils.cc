@@ -381,10 +381,10 @@ void treeExplore(
     return;
   }
   map[p->id] = true;
-  list.push_back(std::make_pair(level, p));
   for (auto& child : p->children_) {
     treeExplore(child, level + 1, list, map);
   }
+  list.push_back(std::make_pair(level, p));
   treeExplore(p->father_, level - 1, list, map);
   treeExplore(p->mother_, level - 1, list, map);
 }
