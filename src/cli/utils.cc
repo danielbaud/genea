@@ -1,5 +1,6 @@
 #include "person.h"
 #include <map>
+#include <set>
 #include <algorithm>
 #include <utility>
 #include <fstream>
@@ -420,6 +421,31 @@ std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared
 
 std::string uniqueDualId(std::shared_ptr<struct Person> a, std::shared_ptr<struct Person> b) {
   return "r" + std::to_string(std::min(a->id, b->id)) + "x" + std::to_string(std::max(a->id, b->id));
+}
+
+std::string dotCompleteSpouses(std::ofstream& out, std::set<int>& ids, std::shared_ptr<struct Person> p) {
+  std::set<std::shared_ptr<struct Person>> spouses = {};
+  for (auto& child : p->children_) {
+    if (child->father_ && child->mother_) {
+      if (child->father_ == p && !spouses.contains(child->mother_)) {
+        spouses.insert(child->mother_);
+      } else if (child->mother_ == p && !spouses.contains(child->father_)) {
+        spouses.insert(child->father_);
+      }
+    }
+  }
+  std::string prevId = p->dotId();
+  for (auto& spouse : spouses) {
+    if (!ids.contains(spouse->id)) {
+      std::string comb = utils::uniqueDualId(p, spouse);
+      out << spouse->dot() << std::endl;;
+      out << comb << " [shape=point, width=0.05]" << std::endl;
+      out << p->dotId() << "--" << comb << "--" << spouse->dotId() << std::endl;
+      ids.insert(spouse->id);
+      prevId = dotCompleteSpouses(out, ids, spouse);
+    }
+  }
+  return prevId;
 }
 
 } // namespace utils

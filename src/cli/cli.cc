@@ -497,19 +497,7 @@ void CLI::generateImage(commandArgs args) {
         if (prevId != "") {
           out << prevId << "--" << person->dotId() << " [style=invis]" << std::endl;
         }
-        prevId = person->dotId();
-        bool firstSpouse = true;
-        for (auto& spouse : spouses) {
-          std::string comb = utils::uniqueDualId(person, spouse);
-          out << spouse->dot() << std::endl;;
-          out << comb << " [shape=point, width=0.05]" << std::endl;
-          out << person->dotId() << "--" << comb << "--" << spouse->dotId() << std::endl;
-          if (!firstSpouse)
-            out << prevId << "--" << comb << " [style=invis]" <<std::endl;
-          prevId = spouse->dotId();
-          ids.insert(spouse->id);
-          firstSpouse = false;
-        }
+        prevId = utils::dotCompleteSpouses(out, ids, person);
       }
     }
     out << '}' << std::endl;

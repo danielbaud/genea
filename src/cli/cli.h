@@ -8,6 +8,7 @@
 #include <functional>
 #include <cstdio>
 #include <fstream>
+#include <set>
 
 #ifndef PS1
   #define PS1 "genea>> "
@@ -29,6 +30,7 @@ int parseId(const std::string& arg);
 std::vector<std::shared_ptr<struct Person>> parseFile(std::ifstream& in);
 std::vector<std::vector<std::shared_ptr<struct Person>>> generations(std::shared_ptr<struct Person> start, int maxPeople);
 std::string uniqueDualId(std::shared_ptr<struct Person> a, std::shared_ptr<struct Person> b);
+std::string dotCompleteSpouses(std::ofstream& out, std::set<int>& ids, std::shared_ptr<struct Person> p);
 
 } // namespace utils
 
