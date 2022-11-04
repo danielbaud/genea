@@ -190,8 +190,8 @@ std::map<std::string, std::function<std::shared_ptr<struct Person>(std::shared_p
 };
 
 std::map<std::string, std::function<std::vector<std::shared_ptr<struct Person>>(std::shared_ptr<struct Person>)>> getRelationGroup = {
-  { "child", &children },
-  { "sibling", &siblings }
+  { "children", &children },
+  { "siblings", &siblings }
 };
 
 std::map<std::string, std::function<bool(std::shared_ptr<struct Person>, std::shared_ptr<struct Person>)>> setRelation = {
