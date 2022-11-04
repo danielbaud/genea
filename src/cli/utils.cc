@@ -49,26 +49,32 @@ std::shared_ptr<struct Person> mother(std::shared_ptr<struct Person> p, const st
 }
 
 std::shared_ptr<struct Person> child(std::shared_ptr<struct Person> p, const std::string& specifier) {
-  if (specifier == "") {
-    std::cerr << "child: needs a specifier" << std::endl;
-    return nullptr;
-  }
   for (auto& c : p->children_) {
-    if (c->firstName_ == specifier)
+    if (c->firstName_ == specifier || specifier == "")
       return c;
   }
   return nullptr;
 }
 
 std::shared_ptr<struct Person> sibling(std::shared_ptr<struct Person> p, const std::string& specifier) {
-  if (specifier == "") {
-    std::cerr << "sibling: needs a specifier" << std::endl;
-    return nullptr;
-  }
   std::vector<std::shared_ptr<struct Person>> s = siblings(p);
   for (auto& sib : s) {
-    if (sib->firstName_ == specifier)
+    if (sib->firstName_ == specifier || specifier == "")
       return sib;
+  }
+  return nullptr;
+}
+
+std::shared_ptr<struct Person> spouse(std::shared_ptr<struct Person> p, const std::string& specifier) {
+  for (auto& child : p->children_) {
+    if (p == child->father_ && child->mother_) {
+      if (specifier == "" || child->mother_->firstName_ == specifier)
+        return child->mother_;
+    }
+    if (p == child->mother_ && child->father_) {
+      if (specifier == "" || child->father_->firstName_ == specifier)
+        return child->father_;
+    }
   }
   return nullptr;
 }
@@ -151,7 +157,7 @@ bool rmMother(std::shared_ptr<struct Person> p, const std::string& specifier) {
 
 bool rmChild(std::shared_ptr<struct Person> p, const std::string& specifier) {
   if (specifier == "") {
-    std::cerr << "child: needs a specifier" << std::endl;
+    std::cerr << "child: removing needs a specifier" << std::endl;
     return false;
   }
   auto child = std::find_if(p->children_.begin(), p->children_.end(), [&specifier](std::shared_ptr<struct Person> c) {
@@ -178,7 +184,8 @@ std::map<std::string, std::function<std::shared_ptr<struct Person>(std::shared_p
   { "father", &father },
   { "mother", &mother },
   { "child", &child },
-  { "sibling", &sibling }
+  { "sibling", &sibling },
+  { "spouse", &spouse }
 };
 
 std::map<std::string, std::function<std::vector<std::shared_ptr<struct Person>>(std::shared_ptr<struct Person>)>> getRelationGroup = {
