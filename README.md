@@ -53,7 +53,7 @@ from the ID
 
 #### add
 This command is similar to `create`, but it also attaches the created person to the
-**cursor** as being the (relation)[#relation] you set it to
+**cursor** as being the [relation](#relation) you set it to
 ```
 # Cursor is Person ID 1: John Doe
 > add father Richard Roe M 5/2/1920
@@ -73,20 +73,20 @@ Person ID 3
 ```
 
 #### attach
-Attaches a person to another one as being its (relation)[#relation]
+Attaches a person to another one as being its [relation](#relation)
 ```
 > attach mother 0 1
 ```
 
 #### remove
-Removes a person from the tree. If a (relation)[#relation] is provided, the person
+Removes a person from the tree. If a [relation](#relation) is provided, the person
 is just de-attached. If an ID is provided, the person is removed altogether
 ```
 > remove 0
 ```
 
 #### info
-Provides information about the cursor or the (relation)[#relation] provided
+Provides information about the cursor or the [relation](#relation) provided
 ```
 > info father
 Person ID 4
@@ -134,7 +134,7 @@ Person ID 4
  5/2/1920 -
 ```
 #### select
-Select another person as being the cursor, wether from ID or from (relation)[#relation] of
+Select another person as being the cursor, wether from ID or from [relation](#relation) of
 the current one
 ```
 > select father.mother
